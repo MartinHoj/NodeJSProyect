@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat online para usuarios</title>
+    <style>
+      body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+      #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
+      #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
+      #input:focus { outline: none; }
+      #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages > li { padding: 0.5rem 1rem; }
+      #messages > li:nth-child(odd) { background: #efefef; }
+
+      #usersShowList { list-style-type: none; display: inline; }
+	  #usersShowList > li { margin-top: 3%; font-style: italic; }
+    </style>
+</head>
+<body>
+	<div id="userListConteiner" hidden>
+		<div class="styleList" style="margin-left: 30%; margin-right: 25%; padding-top: 3%; margin-top: 2%;">
+			<h1 style="display: inline;">
+				Chat:
+			</h1>
+			<ul id="usersShowList"></ul>
+		</div>	
+	</div>
+	<div id=usernameContainer>
+		<div class="styleForm" style="margin-top: 2.5%; padding-top: 2.5%; margin-left: 30%; width: 90%;">
+			<form id="usernameForm" action="">
+				<label for="username" style="margin-right: 5%;">Inserte un nombre de usuario</label>
+				<input type="text" id="usernameInput" name="username" placeholder="User Name" autofocus autocomplete="off" /><button>Send</button>
+			</form>
+		</div>
+	</div>
+	<!-- Creado el button de Salir del chat que te lleva de nuevo a la pagina inicial 
+	le falta agregarle el frontend porque por ahora solo es un button colgado por ahi -->
+	<div class="buttonExitContainer" style="margin-left: 45%; width: 90%;">
+		<button onclick="window.location.reload()" id="exit">Salir</button>
+	</div>
+	
+	<div id="chatContainer" hidden>
+    	<ul id="messages"></ul>
+    	<form id="form" action="">
+      		<input id="input" autocomplete="off" placeholder="Message" autofocus/><button>Send</button>
+    	</form>
+	</div>
+ 	<script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io();
+  var form = document.getElementById('form');
+  var input = document.getElementById('input');
+  var messages = document.getElementById('messages');
+  var chatContainer = document.getElementById('chatContainer');
+
+  var usernameForm = document.getElementById('usernameForm');
+  var usernameInput = document.getElementById('usernameInput');
+  var usernameContainer = document.getElementById('usernameContainer');
+
+  var user = '';
+
+
+  var userListConteiner = document.getElementById('userListConteiner');
+  var usersShowList = document.getElementById('usersShowList');
+
+
+  usernameForm.addEventListener('submit', (e) => {
+  	e.preventDefault();
+  	if (usernameInput.value) {
+  		user = usernameInput.value;
+  		socket.emit('new user', user);
+  		usernameInput.value = '';
+  		usernameContainer.setAttribute('hidden', '');
+  		chatContainer.removeAttribute('hidden');
+  		userListConteiner.removeAttribute('hidden');
+		usernameInput.removeAttribute('autofocus');
+		input.focus();
+	  	};
+  });
+
+  form.addEventListener('submit', (e) => {
+  		e.preventDefault();
+  		if (input.value) {
+  			socket.emit('chat message', input.value, user);
+  			input.value = '';
+  		};
+  });
+
+  socket.on('chat message', (msg) =>{
+  		var item = document.createElement('li');
+  		item.innerHTML = '<strong>' + msg.user + ':' + '</strong>' + '   ' + msg.msg;
+  		messages.appendChild(item);
+  		window.scrollTo(0, document.body.scrollHeight);
+  });
+
+  socket.on('refreshUsers', (usersList) => {
+  	usersShowList.innerHTML = '';
+  	usersList.forEach(function(us){
+  		var item = document.createElement('li');
+  		item.textContent = us;
+  		usersShowList.appendChild(item);
+  	});
+  });  
+
+</script>
+</body>
+</html>
